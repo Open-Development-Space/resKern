@@ -1,7 +1,7 @@
 # resKern
-Rust based kernel for fun
+Rust based kernel to learn with
 
-Building a kernel in rust there is no standard library to work with so build it yourself.
+Building a kernel in rust where there is no standard library to use so you have to learn a lot from scratch.
 
 Follow the organization wide security documentation
 
