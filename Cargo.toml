@@ -3,6 +3,9 @@ name = "resKern"
 version = "0.1.0"
 authors = ["ViridianAStar <bowman9594@gmail.com>"]
 
+[dependencies]
+bootloader = "0.9"
+
 [profile.dev]
 panic = "abort"
 
