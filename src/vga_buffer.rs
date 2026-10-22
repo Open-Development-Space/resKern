@@ -1,5 +1,3 @@
-use core::fmt::write;
-
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
@@ -43,11 +41,14 @@ struct ScreenChar {
 const BUFFER_HEIGHT: usize = 25;
 const BUFFER_WIDTH: usize = 80;
 
+use volatile::Volatile;
+
 #[repr(transparent)]
 struct Buffer {
-    chars: [[ScreenChar; BUFFER_WIDTH]; BUFFER_HEIGHT],
+    chars: [[Volatile<ScreenChar>; BUFFER_WIDTH]; BUFFER_HEIGHT],
 }
 
+use core::fmt;
 pub struct ScreenWriter {
     column_position: usize,
     color_code: ColorCode,
@@ -66,10 +67,10 @@ impl ScreenWriter {
                 let row = BUFFER_HEIGHT - 1;
                 let col = self.column_position;
 
-                self.buffer.chars[row][col] = ScreenChar {
+                self.buffer.chars[row][col].write(ScreenChar {
                     ascii_char: byte,
                     color_code: self.color_code,
-                };
+                });
                 self.column_position += 1;
             }
         }
@@ -87,25 +88,60 @@ impl ScreenWriter {
     }
 
     fn new_line(&mut self) {
-        /*for row in 1..BUFFER_HEIGHT {
+        for row in 1..BUFFER_HEIGHT {
             for col in 0..BUFFER_WIDTH {
-                let character = self.buffer.chars[row][col];
-                self.buffer.chars[row - 1][col] = character;
+                let character = self.buffer.chars[row][col].read();
+                self.buffer.chars[row - 1][col].write(character);
             }
         }
         self.clear_row(BUFFER_HEIGHT - 1);
-        self.column_position = 0;*/
+        self.column_position = 0;
+    }
+
+    fn clear_row(&mut self, row: usize) {
+        let blank = ScreenChar {
+            ascii_char: b' ',
+            color_code: self.color_code,
+        };
+        for col in 0..BUFFER_WIDTH {
+            self.buffer.chars[row][col].write(blank);
+        }
     }
 }
 
-pub fn hard_print() {
-    let mut writer = ScreenWriter {
-        column_position: 0,
-        color_code: ColorCode::new(Color::Blue, Color::Black),
-        buffer: unsafe { &mut *(0xb8000 as *mut Buffer) },
-    };
+impl fmt::Write for ScreenWriter {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        self.write_string(s);
+        Ok(())
+    }
+}
 
-    writer.write_byte(b'S');
-    writer.write_string("cientists have discovered ");
-    writer.write_string("hai");
+use lazy_static::lazy_static;
+use spin::Mutex;
+
+lazy_static! {
+    pub static ref SCREENWRITER: Mutex<ScreenWriter> = Mutex::new(ScreenWriter {
+        column_position: 0,
+        color_code: ColorCode::new(Color::White, Color::Black),
+        buffer: unsafe { &mut *(0xb8000 as *mut Buffer) },
+    });
+}
+
+#[doc(hidden)]
+pub fn _print(args: fmt::Arguments) {
+    use core::fmt::Write;
+    SCREENWRITER.lock().write_fmt(args).unwrap();
+}
+
+#[macro_export]
+macro_rules! print {
+    ($($arg:tt)*) => ($crate::vga_buffer::_print(format_args!($($arg)*)));
+}
+
+#[macro_export]
+macro_rules! print_ln {
+    () => {
+        $crate::print!("\n")
+    };
+    ($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)));
 }
