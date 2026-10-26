@@ -21,13 +21,15 @@ pub enum ScanSetOne {
     W = 0x11,
     E = 0x12,
     R = 0x13,
-    U = 0x14,
-    I = 0x15,
-    O = 0x16,
+    T = 0x14,
+    Y = 0x15,
+    U = 0x16,
+    I = 0x17,
+    O = 0x18,
     P = 0x19,
     LBRACK = 0x1A,
     RBRACK = 0x1B,
-    ENTER = 0x01C,
+    ENTER = 0x1C,
     LCTRL = 0x1D,
     A = 0x1E,
     S = 0x1F,
@@ -87,13 +89,271 @@ pub enum ScanSetOne {
     F12 = 0x58,
 
     COMPOUND = 0xE0,
-    // TODO: compound key presses
-    // TODO: multimedia stuff
+}
+
+#[repr(u8)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ScanSetOneExt {
+    MMPREVTRACK = 0x10,
+    MMNEXTTRACK = 0x19,
+    KPENTER = 0x1C,
+    RCTRL = 0x1D,
+    MMMUTE = 0x20,
+    MMCALC = 0x21,
+    MMPLAY = 0x22,
+    MMSTOP = 0x24,
+    MMVOLDOWN = 0x2E,
+    MMVOLUP = 0x30,
+    MMHOME = 0x32,
+    KPSLASH = 0x35,
+    RALT = 0x38,
+    HOME = 0x47,
+    CURSUP = 0x48,
+    PAGEUP = 0x49,
+    CURSLEFT = 0x4B,
+    CURSRIGHT = 0x4D,
+    END = 0x4F,
+    CURSDWN = 0x50,
+    PAGEDWN = 0x51,
+    INS = 0x52,
+    DEL = 0x53,
+    LGUI = 0x5B,
+    RGUI = 0x5C,
+    APPS = 0x5D,
+    ACPIPOW = 0x5E,
+    ACPISLP = 0x5F,
+    ACPIWKE = 0x63,
+    MMSEARCH = 0x65,
+    MMFAV = 0x66,
+    MMREFRESH = 0x67,
+    WMMSTOP = 0x68,
+    MMFORWARD = 0x69,
+    MMBACK = 0x6A,
+    MMMYPC = 0x6B,
+    MMEMAIL = 0x6C,
+    MMMEDIASEL = 0x6D,
+    // TODO: printscreen and pause
 }
 
 impl ScanSetOne {
     /// Returns the scan code for the key when it is released.
     pub fn key_released(&self) -> u8 {
         (*self as u8) | 0x80
+    }
+
+    /// Returns enum value corresponding to the given scan code.
+    /// Returns `None` if the scan code does not correspond to any key.
+    pub fn map_to_meaning(code: u8) -> Option<ScanSetOne> {
+        Some(match code {
+            0x01 => ScanSetOne::ESC,
+            0x02 => ScanSetOne::ONE,
+            0x03 => ScanSetOne::TWO,
+            0x04 => ScanSetOne::THREE,
+            0x05 => ScanSetOne::FOUR,
+            0x06 => ScanSetOne::FIVE,
+            0x07 => ScanSetOne::SIX,
+            0x08 => ScanSetOne::SEVEN,
+            0x09 => ScanSetOne::EIGHT,
+            0x0A => ScanSetOne::NINE,
+            0x0B => ScanSetOne::ZERO,
+            0x0C => ScanSetOne::MINUS,
+            0x0D => ScanSetOne::EQUAL,
+            0x0E => ScanSetOne::BSPACE,
+            0x0F => ScanSetOne::TAB,
+            0x10 => ScanSetOne::Q,
+            0x11 => ScanSetOne::W,
+            0x12 => ScanSetOne::E,
+            0x13 => ScanSetOne::R,
+            0x14 => ScanSetOne::T,
+            0x15 => ScanSetOne::Y,
+            0x16 => ScanSetOne::U,
+            0x17 => ScanSetOne::I,
+            0x18 => ScanSetOne::O,
+            0x19 => ScanSetOne::P,
+            0x1A => ScanSetOne::LBRACK,
+            0x1B => ScanSetOne::RBRACK,
+            0x1C => ScanSetOne::ENTER,
+            0x1D => ScanSetOne::LCTRL,
+            0x1E => ScanSetOne::A,
+            0x1F => ScanSetOne::S,
+            0x20 => ScanSetOne::D,
+            0x21 => ScanSetOne::F,
+            0x22 => ScanSetOne::G,
+            0x23 => ScanSetOne::H,
+            0x24 => ScanSetOne::J,
+            0x25 => ScanSetOne::K,
+            0x26 => ScanSetOne::L,
+            0x27 => ScanSetOne::SEMICOLON,
+            0x28 => ScanSetOne::SINGLEQUOTE,
+            0x29 => ScanSetOne::BACKTICK,
+            0x2A => ScanSetOne::LSHFT,
+            0x2B => ScanSetOne::BSLASH,
+            0x2C => ScanSetOne::Z,
+            0x2D => ScanSetOne::X,
+            0x2E => ScanSetOne::C,
+            0x2F => ScanSetOne::V,
+            0x30 => ScanSetOne::B,
+            0x31 => ScanSetOne::N,
+            0x32 => ScanSetOne::M,
+            0x33 => ScanSetOne::COMMA,
+            0x34 => ScanSetOne::PERIOD,
+            0x35 => ScanSetOne::FSLASH,
+            0x36 => ScanSetOne::RSHFT,
+            0x37 => ScanSetOne::KPASTERISK,
+            0x38 => ScanSetOne::LALT,
+            0x39 => ScanSetOne::SPACE,
+            0x3A => ScanSetOne::CAPSLCK,
+            0x3B => ScanSetOne::F1,
+            0x3C => ScanSetOne::F2,
+            0x3D => ScanSetOne::F3,
+            0x3E => ScanSetOne::F4,
+            0x3F => ScanSetOne::F5,
+            0x40 => ScanSetOne::F6,
+            0x41 => ScanSetOne::F7,
+            0x42 => ScanSetOne::F8,
+            0x43 => ScanSetOne::F9,
+            0x44 => ScanSetOne::F10,
+            0x45 => ScanSetOne::NUMLCK,
+            0x46 => ScanSetOne::SCRLLCK,
+            0x47 => ScanSetOne::KPSEVEN,
+            0x48 => ScanSetOne::KPEIGHT,
+            0x49 => ScanSetOne::KPNINE,
+            0x4A => ScanSetOne::KPMINUS,
+            0x4B => ScanSetOne::KPFOUR,
+            0x4C => ScanSetOne::KPFIVE,
+            0x4D => ScanSetOne::KPSIX,
+            0x4E => ScanSetOne::KPPLUS,
+            0x4F => ScanSetOne::KPONE,
+            0x50 => ScanSetOne::KPTWO,
+            0x51 => ScanSetOne::KPTHREE,
+            0x52 => ScanSetOne::KPZERO,
+            0x53 => ScanSetOne::KPPERIOD,
+            0x57 => ScanSetOne::F11,
+            0x58 => ScanSetOne::F12,
+            0xE0 => ScanSetOne::COMPOUND,
+            _ => return None,
+        })
+    }
+
+    pub fn meaning_to_char(&self) -> Option<char> {
+        match self {
+            ScanSetOne::Q => Some('q'),
+            ScanSetOne::W => Some('w'),
+            ScanSetOne::E => Some('e'),
+            ScanSetOne::R => Some('r'),
+            ScanSetOne::T => Some('t'),
+            ScanSetOne::Y => Some('y'),
+            ScanSetOne::U => Some('u'),
+            ScanSetOne::I => Some('i'),
+            ScanSetOne::O => Some('o'),
+            ScanSetOne::P => Some('p'),
+            ScanSetOne::A => Some('a'),
+            ScanSetOne::S => Some('s'),
+            ScanSetOne::D => Some('d'),
+            ScanSetOne::F => Some('f'),
+            ScanSetOne::G => Some('g'),
+            ScanSetOne::H => Some('h'),
+            ScanSetOne::J => Some('j'),
+            ScanSetOne::K => Some('k'),
+            ScanSetOne::L => Some('l'),
+            ScanSetOne::Z => Some('z'),
+            ScanSetOne::X => Some('x'),
+            ScanSetOne::C => Some('c'),
+            ScanSetOne::V => Some('v'),
+            ScanSetOne::B => Some('b'),
+            ScanSetOne::N => Some('n'),
+            ScanSetOne::M => Some('m'),
+            ScanSetOne::SPACE => Some(' '),
+            _ => Some('\u{2588}'),
+        }
+    }
+}
+
+impl ScanSetOneExt {
+    /// Returns the scan code for the key when it is released.
+    pub fn key_released(&self) -> u8 {
+        (*self as u8) | 0x80
+    }
+
+    /// Returns enum value corresponding to the given scan code.
+    /// Returns `None` if the scan code does not correspond to any key.
+    pub fn map_to_meaning(code: u8) -> Option<ScanSetOneExt> {
+        Some(match code {
+            0x10 => ScanSetOneExt::MMPREVTRACK,
+            0x19 => ScanSetOneExt::MMNEXTTRACK,
+            0x1C => ScanSetOneExt::KPENTER,
+            0x1D => ScanSetOneExt::RCTRL,
+            0x20 => ScanSetOneExt::MMMUTE,
+            0x21 => ScanSetOneExt::MMCALC,
+            0x22 => ScanSetOneExt::MMPLAY,
+            0x24 => ScanSetOneExt::MMSTOP,
+            0x2E => ScanSetOneExt::MMVOLDOWN,
+            0x30 => ScanSetOneExt::MMVOLUP,
+            0x32 => ScanSetOneExt::MMHOME,
+            0x35 => ScanSetOneExt::KPSLASH,
+            0x38 => ScanSetOneExt::RALT,
+            0x47 => ScanSetOneExt::HOME,
+            0x48 => ScanSetOneExt::CURSUP,
+            0x49 => ScanSetOneExt::PAGEUP,
+            0x4B => ScanSetOneExt::CURSLEFT,
+            0x4D => ScanSetOneExt::CURSRIGHT,
+            0x4F => ScanSetOneExt::END,
+            0x50 => ScanSetOneExt::CURSDWN,
+            0x51 => ScanSetOneExt::PAGEDWN,
+            0x52 => ScanSetOneExt::INS,
+            0x53 => ScanSetOneExt::DEL,
+            0x5B => ScanSetOneExt::LGUI,
+            0x5C => ScanSetOneExt::RGUI,
+            0x5D => ScanSetOneExt::APPS,
+            0x5E => ScanSetOneExt::ACPIPOW,
+            0x5F => ScanSetOneExt::ACPISLP,
+            0x63 => ScanSetOneExt::ACPIWKE,
+            0x65 => ScanSetOneExt::MMSEARCH,
+            0x66 => ScanSetOneExt::MMFAV,
+            0x67 => ScanSetOneExt::MMREFRESH,
+            0x68 => ScanSetOneExt::WMMSTOP,
+            0x69 => ScanSetOneExt::MMFORWARD,
+            0x6A => ScanSetOneExt::MMBACK,
+            0x6B => ScanSetOneExt::MMMYPC,
+            0x6C => ScanSetOneExt::MMEMAIL,
+            0x6D => ScanSetOneExt::MMMEDIASEL,
+            _ => return None,
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{ScanSetOne, ScanSetOneExt};
+
+    #[test_case]
+    fn base_scan_codes_map_to_keys() {
+        for code in (0x01..=0x53).chain(0x57..=0x58).chain([0xE0]) {
+            assert_eq!(
+                ScanSetOne::map_to_meaning(code).map(|key| key as u8),
+                Some(code)
+            );
+        }
+        assert_eq!(ScanSetOne::map_to_meaning(0x00), None);
+        assert_eq!(ScanSetOne::map_to_meaning(0x54), None);
+        assert_eq!(ScanSetOne::map_to_meaning(0x55), None);
+        assert_eq!(ScanSetOne::map_to_meaning(0x56), None);
+        assert_eq!(ScanSetOne::map_to_meaning(0x81), None);
+    }
+
+    #[test_case]
+    fn extended_scan_codes_map_to_keys() {
+        for code in [
+            0x10, 0x19, 0x1C, 0x1D, 0x20, 0x21, 0x22, 0x24, 0x2E, 0x30, 0x32, 0x35, 0x38, 0x47,
+            0x48, 0x49, 0x4B, 0x4D, 0x4F, 0x50, 0x51, 0x52, 0x53, 0x5B, 0x5C, 0x5D, 0x5E, 0x5F,
+            0x63, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6A, 0x6B, 0x6C, 0x6D,
+        ] {
+            assert_eq!(
+                ScanSetOneExt::map_to_meaning(code).map(|key| key as u8),
+                Some(code)
+            );
+        }
+        assert_eq!(ScanSetOneExt::map_to_meaning(0x00), None);
+        assert_eq!(ScanSetOneExt::map_to_meaning(0x5A), None);
     }
 }

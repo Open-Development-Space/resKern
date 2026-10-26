@@ -1,3 +1,4 @@
+use crate::key_interpreter::ScanSetOne;
 use crate::{gdt, print};
 use crate::{print_cl, print_ln, print_ln_cl, vga_buffer::Color::Yellow};
 use lazy_static::lazy_static;
@@ -58,11 +59,13 @@ extern "x86-interrupt" fn timer_interrupt_handler(_stack_frame: InterruptStackFr
 /// Handle keyboard interrupts
 extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStackFrame) {
     use x86_64::instructions::port::Port;
-    use crate::key_interpreter::ScanSetOne;
     let mut port = Port::new(0x60);
-    let scanned_char: u8 = unsafe { port.read() };
-    
-    print!("{:X}", scanned_char);
+    let scanned: u8 = unsafe { port.read() };
+    if let Some(scanned_key) = ScanSetOne::map_to_meaning(scanned) {
+        if let Some(scanned_char) = ScanSetOne::meaning_to_char(&scanned_key) {
+            print!("{}", scanned_char);
+        }
+    }
 
     unsafe {
         PICS.lock()
