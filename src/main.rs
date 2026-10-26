@@ -1,25 +1,50 @@
 #![no_std]
 #![no_main]
 // Disable these so we dont link the standard library and the default entry point is not rust level
+#![test_runner(resKern::test_runner)]
+#![feature(custom_test_frameworks)]
+#![reexport_test_harness_main = "test_main"]
+#![feature(abi_x86_interrupt)]
 
+extern crate lazy_static;
+extern crate spin;
+extern crate uart_16550;
+extern crate volatile;
+extern crate x86_64;
 use core::panic::PanicInfo;
+mod input_reader;
+pub mod interrupts;
+mod serial;
 mod vga_buffer;
 
 #[unsafe(no_mangle)]
 pub extern "C" fn _start() -> ! {
-    /*let vga_buffer = 0xb8000 as *mut u8;
+    print_ln!("Beginning init\n");
 
-    for (i, &byte) in b"Hello Universe".iter().enumerate() {
-        unsafe {
-            *vga_buffer.offset(i as isize * 2) = byte;
-            *vga_buffer.offset(i as isize * 2 + 1) = 0x2;
-        }
-    }*/
-    vga_buffer::hard_print();
+    resKern::init();
+
+    #[cfg(test)]
+    test_main();
+
+    print_ln!("Did not crash");
     loop {}
 }
 
+#[cfg(not(test))]
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
+    print_ln!("{}", _info);
     loop {}
+}
+
+#[cfg(test)]
+#[panic_handler]
+fn panic(info: &PanicInfo) -> ! {
+    resKern::test_mode_panic_handling(info)
+}
+
+/// Make a tautological assertion to test tests
+#[test_case]
+fn oneisone() {
+    assert_eq!(1, 1);
 }
