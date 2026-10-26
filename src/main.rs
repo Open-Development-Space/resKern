@@ -12,6 +12,7 @@ extern crate uart_16550;
 extern crate volatile;
 extern crate x86_64;
 use core::panic::PanicInfo;
+
 mod input_reader;
 pub mod interrupts;
 mod serial;
@@ -23,6 +24,10 @@ pub extern "C" fn _start() -> ! {
 
     resKern::init();
 
+    unsafe {
+        *(0xFFFFFFFFFFFFFFF as *mut u8) = 42;
+    };
+
     #[cfg(test)]
     test_main();
 
@@ -33,7 +38,7 @@ pub extern "C" fn _start() -> ! {
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
-    print_ln!("{}", _info);
+    print_ln_cl!(vga_buffer::Color::Red, "{}", _info);
     loop {}
 }
 

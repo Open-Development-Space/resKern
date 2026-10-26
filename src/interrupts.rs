@@ -9,6 +9,7 @@ lazy_static! {
     static ref IDT: InterruptDescriptorTable = {
         let mut idt = InterruptDescriptorTable::new();
         idt.breakpoint.set_handler_fn(bp_handler);
+        idt.double_fault.set_handler_fn(df_handler);
         idt
     };
 }
@@ -23,6 +24,10 @@ extern "x86-interrupt" fn bp_handler(stack_frame: InterruptStackFrame) {
     print_ln!();
     print_ln_cl!(Yellow, "A BREAKPOINT has occured");
     print_ln_cl!(Red, "EXCEPTION: BREAKPOINT\n{:#?}\n", stack_frame);
+}
+
+extern "x86-interrupt" fn df_handler(stack_frame: InterruptStackFrame, _error_code: u64) -> ! {
+    panic!("EXCEPTION: DOUBLE FAULT\n{:#?}", stack_frame);
 }
 
 #[test_case]
