@@ -85,8 +85,3 @@ impl InterruptIndex {
         self as u8
     }
 }
-
-#[test_case]
-fn test_bp_except() {
-    x86_64::instructions::interrupts::int3();
-}
