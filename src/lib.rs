@@ -8,13 +8,24 @@
 
 use core::panic::PanicInfo;
 
+pub mod gdt;
 pub mod interrupts;
+pub mod key_interpreter;
 pub mod serial;
 pub mod vga_buffer;
 
+pub fn halt_loop() -> ! {
+    loop {
+        x86_64::instructions::hlt();
+    }
+}
+
 /// init function
 pub fn init() {
+    gdt::init();
     interrupts::init_idt();
+    unsafe { interrupts::PICS.lock().initialize() };
+    x86_64::instructions::interrupts::enable();
 }
 
 /// Entry point for tests
@@ -24,7 +35,7 @@ pub extern "C" fn _start() -> ! {
     init();
     test_main();
 
-    loop {}
+    halt_loop();
 }
 
 #[cfg(test)]
@@ -65,7 +76,7 @@ pub fn test_mode_panic_handling(info: &PanicInfo) -> ! {
     sprint_ln!("Error: {}\n", info);
     exit_qemu(QemuExits::Failed);
 
-    loop {}
+    halt_loop();
 }
 
 /// Describe what exit codes exist

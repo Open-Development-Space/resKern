@@ -11,9 +11,9 @@ extern crate spin;
 extern crate uart_16550;
 extern crate volatile;
 extern crate x86_64;
+mod key_interpreter;
 use core::panic::PanicInfo;
-
-mod input_reader;
+pub mod gdt;
 pub mod interrupts;
 mod serial;
 mod vga_buffer;
@@ -24,22 +24,18 @@ pub extern "C" fn _start() -> ! {
 
     resKern::init();
 
-    unsafe {
-        *(0xFFFFFFFFFFFFFFF as *mut u8) = 42;
-    };
-
     #[cfg(test)]
     test_main();
 
     print_ln!("Did not crash");
-    loop {}
+    resKern::halt_loop();
 }
 
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
     print_ln_cl!(vga_buffer::Color::Red, "{}", _info);
-    loop {}
+    resKern::halt_loop();
 }
 
 #[cfg(test)]
