@@ -2,6 +2,7 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 
+/// Colors
 pub enum Color {
     Black = 0,
     Blue = 1,
@@ -21,16 +22,19 @@ pub enum Color {
     White = 15,
 }
 
+/// Build a color code struct
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(transparent)]
 struct ColorCode(u8);
 
+/// Define creation of a new color code
 impl ColorCode {
     fn new(foreground: Color, background: Color) -> ColorCode {
         ColorCode((background as u8) << 4 | (foreground as u8))
     }
 }
 
+/// What a character on screen should look like
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
 struct ScreenChar {
@@ -48,6 +52,7 @@ struct Buffer {
     chars: [[Volatile<ScreenChar>; BUFFER_WIDTH]; BUFFER_HEIGHT],
 }
 
+/// What a ScreenWriter should look like
 use core::fmt;
 pub struct ScreenWriter {
     column_position: usize,
@@ -55,7 +60,9 @@ pub struct ScreenWriter {
     buffer: &'static mut Buffer,
 }
 
+// Implement functions necessary for a screen writer
 impl ScreenWriter {
+    /// Write a byte to the screen
     pub fn write_byte(&mut self, byte: u8) {
         match byte {
             b'\n' => self.new_line(),
@@ -76,6 +83,7 @@ impl ScreenWriter {
         }
     }
 
+    /// Write a string / series of bytes to the screen
     pub fn write_string(&mut self, s: &str) {
         for byte in s.bytes() {
             match byte {
@@ -87,6 +95,7 @@ impl ScreenWriter {
         }
     }
 
+    /// Write a new line
     fn new_line(&mut self) {
         for row in 1..BUFFER_HEIGHT {
             for col in 0..BUFFER_WIDTH {
@@ -98,6 +107,7 @@ impl ScreenWriter {
         self.column_position = 0;
     }
 
+    /// Clear a row from the screen
     fn clear_row(&mut self, row: usize) {
         let blank = ScreenChar {
             ascii_char: b' ',
@@ -109,6 +119,7 @@ impl ScreenWriter {
     }
 }
 
+/// Formatted writes to screen
 impl fmt::Write for ScreenWriter {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         self.write_string(s);
@@ -133,11 +144,13 @@ pub fn _print(args: fmt::Arguments) {
     SCREENWRITER.lock().write_fmt(args).unwrap();
 }
 
+/// Print given input to screen
 #[macro_export]
 macro_rules! print {
     ($($arg:tt)*) => ($crate::vga_buffer::_print(format_args!($($arg)*)));
 }
 
+/// Print given input with a new line at end to screen.
 #[macro_export]
 macro_rules! print_ln {
     () => {

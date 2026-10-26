@@ -1,11 +1,12 @@
 [package]
 name = "resKern"
 version = "0.1.0"
-authors = ["ViridianAStar <bowman9594@gmail.com>"]
+edition = "2024"
 
 [package.metadata.bootimage]
-test-args = ["-device", "isa-debug-exit,iobase=0xf4,iosize=0x04"]
+test-args = ["-device", "isa-debug-exit,iobase=0xf4,iosize=0x04", "-serial", "stdio", "-display", "none"]
 test-success-exit-code = 33
+test-timeout = 360 
 
 [dependencies]
 bootloader = "0.9"

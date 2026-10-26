@@ -1,27 +1,36 @@
 #![no_std]
 #![no_main]
 // Disable these so we dont link the standard library and the default entry point is not rust level
+#![test_runner(resKern::test_runner)]
 #![feature(custom_test_frameworks)]
-#![test_runner(crate::test_runner)]
 #![reexport_test_harness_main = "test_main"]
+#![feature(abi_x86_interrupt)]
 
 extern crate lazy_static;
 extern crate spin;
+extern crate uart_16550;
 extern crate volatile;
 extern crate x86_64;
 use core::panic::PanicInfo;
+mod input_reader;
+pub mod interrupts;
+mod serial;
 mod vga_buffer;
 
 #[unsafe(no_mangle)]
 pub extern "C" fn _start() -> ! {
-    print_ln!("Hello Universe{}", "!");
+    print_ln!("Beginning init\n");
+
+    resKern::init();
 
     #[cfg(test)]
     test_main();
 
+    print_ln!("Did not crash");
     loop {}
 }
 
+#[cfg(not(test))]
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
     print_ln!("{}", _info);
@@ -29,34 +38,12 @@ fn panic(_info: &PanicInfo) -> ! {
 }
 
 #[cfg(test)]
-pub fn test_runner(tests: &[&dyn Fn()]) {
-    print_ln!("Running {} tests", tests.len());
-    for test in tests {
-        test();
-    }
-
-    exit_qemu(QemuExits::Success)
+fn panic(info: &PanicInfo) -> ! {
+    resKern::test_mode_panic_handling(info)
 }
 
+/// Make a tautological assertion to test tests
 #[test_case]
 fn oneisone() {
-    print!("Asserting 1=1... ");
     assert_eq!(1, 1);
-    print_ln!("[|OK|]");
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[repr(u32)]
-pub enum QemuExits {
-    Success = 0x10,
-    Failed = 0x11,
-}
-
-pub fn exit_qemu(exit_code: QemuExits) {
-    use x86_64::instructions::port::Port;
-
-    unsafe {
-        let mut port = Port::new(0xf4);
-        port.write(exit_code as u32);
-    }
 }
