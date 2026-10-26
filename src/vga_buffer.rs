@@ -144,10 +144,30 @@ pub fn _print(args: fmt::Arguments) {
     SCREENWRITER.lock().write_fmt(args).unwrap();
 }
 
+#[doc(hidden)]
+pub fn _print_color(args: fmt::Arguments, color: Color) {
+    use core::fmt::Write;
+
+    let mut writer = SCREENWRITER.lock();
+    let original_color_code = writer.color_code;
+    writer.color_code = ColorCode((original_color_code.0 & 0xf0) | color as u8);
+    let result = writer.write_fmt(args);
+    writer.color_code = original_color_code;
+    result.unwrap();
+}
+
 /// Print given input to screen
 #[macro_export]
 macro_rules! print {
     ($($arg:tt)*) => ($crate::vga_buffer::_print(format_args!($($arg)*)));
+}
+
+/// Print given input in the specified foreground color to screen.
+#[macro_export]
+macro_rules! print_cl {
+    ($color:expr, $($arg:tt)*) => {
+        $crate::vga_buffer::_print_color(format_args!($($arg)*), $color)
+    };
 }
 
 /// Print given input with a new line at end to screen.
@@ -157,4 +177,15 @@ macro_rules! print_ln {
         $crate::print!("\n")
     };
     ($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)));
+}
+
+/// Print given input in the specified foreground color with a new line at end.
+#[macro_export]
+macro_rules! print_ln_cl {
+    ($color:expr) => {
+        $crate::print_cl!($color, "\n")
+    };
+    ($color:expr, $($arg:tt)*) => {
+        $crate::vga_buffer::_print_color(format_args!("{}\n", format_args!($($arg)*)), $color)
+    };
 }

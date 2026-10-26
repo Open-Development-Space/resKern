@@ -1,4 +1,7 @@
-use crate::{print, print_ln};
+use crate::{
+    print_cl, print_ln, print_ln_cl,
+    vga_buffer::Color::{Red, Yellow},
+};
 use lazy_static::lazy_static;
 use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame};
 
@@ -11,11 +14,18 @@ lazy_static! {
 }
 
 pub fn init_idt() {
-    print!("Initializing IDT... ");
+    print_cl!(Yellow, "Initializing IDT... ");
     IDT.load();
-    print_ln!("Loaded IDT!")
+    print_ln_cl!(Yellow, "Loaded IDT!")
 }
 
 extern "x86-interrupt" fn bp_handler(stack_frame: InterruptStackFrame) {
-    print_ln!("EXCEPTION: BREAKPOINT\n{:#?}", stack_frame);
+    print_ln!();
+    print_ln_cl!(Yellow, "A BREAKPOINT has occured");
+    print_ln_cl!(Red, "EXCEPTION: BREAKPOINT\n{:#?}\n", stack_frame);
+}
+
+#[test_case]
+fn test_bp_except() {
+    x86_64::instructions::interrupts::int3();
 }

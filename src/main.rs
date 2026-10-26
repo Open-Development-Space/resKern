@@ -38,6 +38,7 @@ fn panic(_info: &PanicInfo) -> ! {
 }
 
 #[cfg(test)]
+#[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     resKern::test_mode_panic_handling(info)
 }

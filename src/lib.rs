@@ -1,3 +1,4 @@
+#![allow(non_snake_case)]
 #![no_std]
 #![cfg_attr(test, no_main)]
 #![feature(custom_test_frameworks)]
@@ -20,12 +21,14 @@ pub fn init() {
 #[cfg(test)]
 #[unsafe(no_mangle)]
 pub extern "C" fn _start() -> ! {
+    init();
     test_main();
 
     loop {}
 }
 
 #[cfg(test)]
+#[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     test_mode_panic_handling(info)
 }
