@@ -141,19 +141,26 @@ lazy_static! {
 #[doc(hidden)]
 pub fn _print(args: fmt::Arguments) {
     use core::fmt::Write;
-    SCREENWRITER.lock().write_fmt(args).unwrap();
+    use x86_64::instructions::interrupts;
+
+    interrupts::without_interrupts(|| {
+        SCREENWRITER.lock().write_fmt(args).unwrap();
+    });
 }
 
 #[doc(hidden)]
 pub fn _print_color(args: fmt::Arguments, color: Color) {
     use core::fmt::Write;
+    use x86_64::instructions::interrupts;
 
-    let mut writer = SCREENWRITER.lock();
-    let original_color_code = writer.color_code;
-    writer.color_code = ColorCode((original_color_code.0 & 0xf0) | color as u8);
-    let result = writer.write_fmt(args);
-    writer.color_code = original_color_code;
-    result.unwrap();
+    interrupts::without_interrupts(|| {
+        let mut writer = SCREENWRITER.lock();
+        let original_color_code = writer.color_code;
+        writer.color_code = ColorCode((original_color_code.0 & 0xf0) | color as u8);
+        let result = writer.write_fmt(args);
+        writer.color_code = original_color_code;
+        result.unwrap();
+    });
 }
 
 /// Print given input to screen
