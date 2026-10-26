@@ -1,3 +1,6 @@
+/// PS2 Keyboard scan code set one https://wiki.osdev.org/PS/2_Keyboard#Scan_Code_Set_1
+#[repr(u8)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ScanSetOne {
     ESC = 0x01,
     ONE = 0x02,
@@ -12,7 +15,8 @@ pub enum ScanSetOne {
     ZERO = 0x0B,
     MINUS = 0x0C,
     EQUAL = 0x0D,
-    BSPACE = 0x0F,
+    BSPACE = 0x0E,
+    TAB = 0x0F,
     Q = 0x10,
     W = 0x11,
     E = 0x12,
@@ -20,4 +24,76 @@ pub enum ScanSetOne {
     U = 0x14,
     I = 0x15,
     O = 0x16,
+    P = 0x19,
+    LBRACK = 0x1A,
+    RBRACK = 0x1B,
+    ENTER = 0x01C,
+    LCTRL = 0x1D,
+    A = 0x1E,
+    S = 0x1F,
+    D = 0x20,
+    F = 0x21,
+    G = 0x22,
+    H = 0x23,
+    J = 0x24,
+    K = 0x25,
+    L = 0x26,
+    SEMICOLON = 0x27,
+    SINGLEQUOTE = 0x28,
+    BACKTICK = 0x29,
+    LSHFT = 0x2A,
+    BSLASH = 0x2B,
+    Z = 0x2C,
+    X = 0x2D,
+    C = 0x2E,
+    V = 0x2F,
+    B = 0x30,
+    N = 0x31,
+    M = 0x32,
+    COMMA = 0x33,
+    PERIOD = 0x34,
+    FSLASH = 0x35,
+    RSHFT = 0x36,
+    KPASTERISK = 0x37,
+    LALT = 0x38,
+    SPACE = 0x39,
+    CAPSLCK = 0x3A,
+    F1 = 0x3B,
+    F2 = 0x3C,
+    F3 = 0x3D,
+    F4 = 0x3E,
+    F5 = 0x3F,
+    F6 = 0x40,
+    F7 = 0x41,
+    F8 = 0x42,
+    F9 = 0x43,
+    F10 = 0x44,
+    NUMLCK = 0x45,
+    SCRLLCK = 0x46,
+    KPSEVEN = 0x47,
+    KPEIGHT = 0x48,
+    KPNINE = 0x49,
+    KPMINUS = 0x4A,
+    KPFOUR = 0x4B,
+    KPFIVE = 0x4C,
+    KPSIX = 0x4D,
+    KPPLUS = 0x4E,
+    KPONE = 0x4F,
+    KPTWO = 0x50,
+    KPTHREE = 0x51,
+    KPZERO = 0x52,
+    KPPERIOD = 0x53,
+    F11 = 0x57,
+    F12 = 0x58,
+
+    COMPOUND = 0xE0,
+    // TODO: compound key presses
+    // TODO: multimedia stuff
+}
+
+impl ScanSetOne {
+    /// Returns the scan code for the key when it is released.
+    pub fn key_released(&self) -> u8 {
+        (*self as u8) | 0x80
+    }
 }

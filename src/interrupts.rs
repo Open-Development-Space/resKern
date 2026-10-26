@@ -58,9 +58,11 @@ extern "x86-interrupt" fn timer_interrupt_handler(_stack_frame: InterruptStackFr
 /// Handle keyboard interrupts
 extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStackFrame) {
     use x86_64::instructions::port::Port;
+    use crate::key_interpreter::ScanSetOne;
     let mut port = Port::new(0x60);
     let scanned_char: u8 = unsafe { port.read() };
-    print!("{}", scanned_char);
+    
+    print!("{:X}", scanned_char);
 
     unsafe {
         PICS.lock()
