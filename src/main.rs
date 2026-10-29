@@ -14,20 +14,46 @@ extern crate x86_64;
 mod key_interpreter;
 use core::panic::PanicInfo;
 pub mod gdt;
-pub mod interrupts;
 mod serial;
 mod vga_buffer;
 
-#[unsafe(no_mangle)]
-pub extern "C" fn _start() -> ! {
-    print_ln!("Beginning init\n");
+use bootloader::{BootInfo, entry_point};
+use resKern::memory::translate_addr;
 
+use crate::vga_buffer::Color::Green;
+
+entry_point!(kern_start);
+
+fn kern_start(boot_info: &'static BootInfo) -> ! {
+    use resKern::memory;
+    use x86_64::{VirtAddr, structures::paging::Translate};
+
+    print_ln!("Beginning kinit\n");
     resKern::init();
+
+    print_ln_cl!(Green, "Configuring memory");
+
+    let phys_mem_oset = VirtAddr::new(boot_info.physical_memory_offset);
+    let mapper = unsafe { memory::init(phys_mem_oset) };
+
+    let addrs = [
+        0xb8000,
+        0x201008,
+        0x0100_0020_1a10,
+        boot_info.physical_memory_offset,
+    ];
+
+    for &addr in &addrs {
+        let virt = VirtAddr::new(addr);
+        let phys = mapper.translate_addr(virt);
+        print_ln!("{:?} -> {:?}", virt, phys);
+    }
 
     #[cfg(test)]
     test_main();
-
-    print_ln!("Did not crash");
+    print_ln!();
+    print_ln!("finished kinit");
+    print_ln!("This program resembles a kernel!");
     resKern::halt_loop();
 }
 

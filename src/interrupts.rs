@@ -1,10 +1,11 @@
 use crate::key_interpreter::ScanSetOne;
+use crate::vga_buffer::Color::Red;
 use crate::{gdt, print};
 use crate::{print_cl, print_ln, print_ln_cl, vga_buffer::Color::Yellow};
 use lazy_static::lazy_static;
 use pic8259::ChainedPics;
 use spin;
-use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame};
+use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame, PageFaultErrorCode};
 
 pub const PIC_1_OFFSET: u8 = 32;
 pub const PIC_2_OFFSET: u8 = PIC_1_OFFSET + 8;
@@ -23,6 +24,7 @@ lazy_static! {
         }
         idt[InterruptIndex::Timer.to_u8()].set_handler_fn(timer_interrupt_handler);
         idt[InterruptIndex::Keyboard.to_u8()].set_handler_fn(keyboard_interrupt_handler);
+        idt.page_fault.set_handler_fn(pf_handler);
         idt
     };
 }
@@ -71,6 +73,20 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
         PICS.lock()
             .notify_end_of_interrupt(InterruptIndex::Keyboard.to_u8());
     }
+}
+
+/// Handle memory page interrupts
+extern "x86-interrupt" fn pf_handler(
+    stack_frame: InterruptStackFrame,
+    error_code: PageFaultErrorCode,
+) {
+    use x86_64::registers::control::Cr2;
+
+    print_ln_cl!(Yellow, "A PAGE FAULT has occured");
+    print_ln_cl!(Red, "Accessed Address: {:?}", Cr2::read());
+    print_ln_cl!(Red, "Error Code: {:?}", error_code);
+    print_ln_cl!(Red, "{:#?}", stack_frame);
+    crate::halt_loop();
 }
 
 #[derive(Debug, Clone, Copy)]
