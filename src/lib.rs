@@ -41,7 +41,6 @@ pub fn init() {
     interrupts::init_idt();
     unsafe { interrupts::PICS.lock().initialize() };
     x86_64::instructions::interrupts::enable();
-    print_ln!("init successful");
 }
 
 #[cfg(test)]
