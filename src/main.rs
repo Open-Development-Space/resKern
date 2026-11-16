@@ -18,14 +18,15 @@ mod serial;
 mod vga_buffer;
 
 use bootloader::{BootInfo, entry_point};
-use resKern::memory::translate_addr;
+use resKern::memory::{BootInfoFrameAllocator, translate_addr};
+use x86_64::structures::paging::Page;
 
 use crate::vga_buffer::Color::Green;
 
 entry_point!(kern_start);
 
 fn kern_start(boot_info: &'static BootInfo) -> ! {
-    use resKern::memory;
+    use resKern::memory::{self, BootInfoFrameAllocator};
     use x86_64::{VirtAddr, structures::paging::Translate};
 
     print_ln!("Beginning kinit\n");
@@ -34,23 +35,15 @@ fn kern_start(boot_info: &'static BootInfo) -> ! {
     print_ln_cl!(Green, "Configuring memory");
 
     let phys_mem_oset = VirtAddr::new(boot_info.physical_memory_offset);
-    let mapper = unsafe { memory::init(phys_mem_oset) };
+    let mut mapper = unsafe { memory::init(phys_mem_oset) };
+    let mut fallocater = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_map) };
 
-    let addrs = [
-        0xb8000,
-        0x201008,
-        0x0100_0020_1a10,
-        boot_info.physical_memory_offset,
-    ];
-
-    for &addr in &addrs {
-        let virt = VirtAddr::new(addr);
-        let phys = mapper.translate_addr(virt);
-        print_ln!("{:?} -> {:?}", virt, phys);
-    }
+    let page = Page::containing_address(VirtAddr::new(0xdeadbeef000));
+    memory::create_test_mapping(page, &mut mapper, &mut fallocater);
 
     #[cfg(test)]
     test_main();
+
     print_ln!();
     print_ln!("finished kinit");
     print_ln!("This program resembles a kernel!");
