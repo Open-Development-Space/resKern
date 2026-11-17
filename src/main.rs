@@ -6,6 +6,7 @@
 #![reexport_test_harness_main = "test_main"]
 #![feature(abi_x86_interrupt)]
 
+extern crate alloc;
 extern crate lazy_static;
 extern crate spin;
 extern crate uart_16550;
@@ -17,6 +18,7 @@ pub mod gdt;
 mod serial;
 mod vga_buffer;
 
+use alloc::boxed::Box;
 use bootloader::{BootInfo, entry_point};
 use resKern::memory::{BootInfoFrameAllocator, translate_addr};
 use x86_64::structures::paging::Page;
@@ -38,8 +40,7 @@ fn kern_start(boot_info: &'static BootInfo) -> ! {
     let mut mapper = unsafe { memory::init(phys_mem_oset) };
     let mut fallocater = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_map) };
 
-    let page = Page::containing_address(VirtAddr::new(0xdeadbeef000));
-    memory::create_test_mapping(page, &mut mapper, &mut fallocater);
+    let thing1 = Box::new(41);
 
     #[cfg(test)]
     test_main();
