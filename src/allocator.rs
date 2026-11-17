@@ -7,8 +7,12 @@ use x86_64::{
     },
 };
 
-pub const HEAP_START: usize = 0x_1111_1111_0000;
-pub const HEAP_SIZE: usize = 100 * 1024;
+// Different Allocators
+pub mod bump_allocator;
+
+pub const HEAP_START: usize = 0xFFFF_C000_0000_0000;
+pub const HEAP_SIZE: usize = 1000 * 1024;
+pub const MAX_HEAP_SIZE: usize = 1000 * HEAP_SIZE;
 
 pub struct Dummy;
 
@@ -34,6 +38,10 @@ pub fn heap_init(
         unsafe { mapper.map_to(page, frame, flags, fallocator)?.flush() };
     }
 
+    unsafe {
+        ALLOCATOR.lock().init(HEAP_START, HEAP_SIZE);
+    }
+
     Ok(())
 }
 
@@ -47,5 +55,7 @@ unsafe impl GlobalAlloc for Dummy {
     }
 }
 
+use linked_list_allocator::LockedHeap;
+
 #[global_allocator]
-static ALLOCATOR: Dummy = Dummy;
+static ALLOCATOR: LockedHeap = LockedHeap::empty();
