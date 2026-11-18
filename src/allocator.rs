@@ -11,8 +11,7 @@ use x86_64::{
 pub mod bump_allocator;
 
 pub const HEAP_START: usize = 0xFFFF_C000_0000_0000;
-pub const HEAP_SIZE: usize = 1000 * 1024;
-pub const MAX_HEAP_SIZE: usize = 1000 * HEAP_SIZE;
+pub const HEAP_SIZE: usize = 1024 * 1024;
 
 pub struct Dummy;
 
@@ -20,8 +19,6 @@ pub fn heap_init(
     mapper: &mut impl Mapper<Size4KiB>,
     fallocator: &mut impl FrameAllocator<Size4KiB>,
 ) -> Result<(), MapToError<Size4KiB>> {
-    use crate::print_ln;
-    print_ln!("Attempting to allocate/init heap");
     let page_range = {
         let heap_start = VirtAddr::new(HEAP_START as u64);
         let heap_end = heap_start + HEAP_SIZE as u64 - 1u64;
@@ -55,7 +52,31 @@ unsafe impl GlobalAlloc for Dummy {
     }
 }
 
-use linked_list_allocator::LockedHeap;
+pub struct Locked<A> {
+    inner: spin::Mutex<A>,
+}
+
+impl<A> Locked<A> {
+    pub const fn new(inner: A) -> Self {
+        Locked {
+            inner: spin::Mutex::new(inner),
+        }
+    }
+
+    pub fn lock(&self) -> spin::MutexGuard<A> {
+        self.inner.lock()
+    }
+}
+
+fn align_up(addr: usize, alignment: usize) -> usize {
+    let gap = addr % alignment;
+    if gap == 0 {
+        return addr;
+    }
+    addr - gap + alignment
+}
+
+use bump_allocator::BumpAllocator;
 
 #[global_allocator]
-static ALLOCATOR: LockedHeap = LockedHeap::empty();
+static ALLOCATOR: Locked<BumpAllocator> = Locked::new(BumpAllocator::new());

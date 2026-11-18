@@ -23,6 +23,7 @@ use bootloader::{BootInfo, entry_point};
 use resKern::{
     allocator,
     memory::{BootInfoFrameAllocator, translate_addr},
+    task::{Task, simple::SimpleExecutor},
 };
 use x86_64::structures::paging::Page;
 
@@ -42,12 +43,16 @@ fn kern_start(boot_info: &'static BootInfo) -> ! {
     let phys_mem_oset = VirtAddr::new(boot_info.physical_memory_offset);
     let mut mapper = unsafe { memory::init(phys_mem_oset) };
     let mut fallocator = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_map) };
+    print_ln!("Attempting to allocate/init heap");
     allocator::heap_init(&mut mapper, &mut fallocator).expect("heap initialization failed");
-
+    print_ln!("Making async executor");
+    let mut executor = SimpleExecutor::new();
     print_ln!();
     print_ln!("finished kinit");
     print_ln!("This program resembles a kernel!");
 
+    // Test/Showcase code. Actual kernel logic and loops to come later.
+    print_ln!("Start of showcase");
     let hv = Box::new(41);
     print_ln_cl!(Cyan, "Heap stored value at {:p}", hv);
 
@@ -71,10 +76,24 @@ fn kern_start(boot_info: &'static BootInfo) -> ! {
         Rc::strong_count(&cloned_ref)
     );
 
+    print_ln!();
+    executor.spawn(Task::new(do_an_async()));
+    executor.run();
+    print_ln!("End of showcase");
+    // End of Test/Showcase code.
     #[cfg(test)]
     test_main();
 
     resKern::halt_loop();
+}
+
+async fn async_thing() -> u16 {
+    4
+}
+
+async fn do_an_async() {
+    let num = async_thing().await;
+    print_ln_cl!(Cyan, "number from async function: {}", num);
 }
 
 #[cfg(not(test))]
