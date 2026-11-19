@@ -1,10 +1,10 @@
-use crate::gdt;
 use crate::vga_buffer::Color::Red;
 use crate::{print_cl, print_ln, print_ln_cl, vga_buffer::Color::Yellow};
 use lazy_static::lazy_static;
 use pic8259::ChainedPics;
 use spin;
 use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame, PageFaultErrorCode};
+use crate::arch::x86_64::gdt;
 
 pub const PIC_1_OFFSET: u8 = 32;
 pub const PIC_2_OFFSET: u8 = PIC_1_OFFSET + 8;

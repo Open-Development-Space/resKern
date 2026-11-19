@@ -8,6 +8,8 @@ use x86_64::{
 
 use crate::{print_ln_cl, vga_buffer::Color::Green};
 
+pub mod heap;
+
 /// Initialize new OffsetPageTable.
 ///
 /// Caller must guarantee that the total physical memory space is mapped to virtual memory at the

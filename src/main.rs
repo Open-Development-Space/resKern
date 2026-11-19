@@ -13,8 +13,6 @@ extern crate uart_16550;
 extern crate volatile;
 extern crate x86_64;
 use core::panic::PanicInfo;
-pub mod gdt;
-mod serial;
 mod vga_buffer;
 
 use alloc::{boxed::Box, rc::Rc, vec, vec::Vec};

@@ -5,6 +5,9 @@ use x86_64::VirtAddr;
 use x86_64::structures::gdt::{Descriptor, GlobalDescriptorTable, SegmentSelector};
 use x86_64::structures::tss::TaskStateSegment;
 
+// Double fault interrupt stack table index
+pub const DF_IST_INDEX: u16 = 0;
+
 pub fn init() {
     print_cl!(Yellow, "Loading GDT... ");
     use x86_64::instructions::segmentation::{CS, Segment};
@@ -36,9 +39,6 @@ struct Selectors {
     code_selector: SegmentSelector,
     tss_selector: SegmentSelector,
 }
-
-// Double fault interrupt stack table index
-pub const DF_IST_INDEX: u16 = 0;
 
 lazy_static! {
     static ref TSS: TaskStateSegment = {

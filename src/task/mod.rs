@@ -6,8 +6,8 @@ use core::{
     task::{Context, Poll},
 };
 
-pub mod keyboard;
 pub mod simple;
+pub use crate::drivers::keyboard;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 struct TaskId(u64);
