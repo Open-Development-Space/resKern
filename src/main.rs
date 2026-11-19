@@ -14,7 +14,6 @@ extern crate volatile;
 extern crate x86_64;
 use core::panic::PanicInfo;
 mod vga_buffer;
-
 use alloc::{boxed::Box, rc::Rc, vec, vec::Vec};
 use bootloader::{BootInfo, entry_point};
 use resKern::{
@@ -57,6 +56,7 @@ fn kern_start(boot_info: &'static BootInfo) -> ! {
     }
     print_ln_cl!(Cyan, "Vector values at {:p}", vec.as_slice());
 
+    panic!("Kernel panic test");
     let reference_counted = Rc::new(vec![1, 2, 3]);
     let cloned_ref = reference_counted.clone();
     print_ln_cl!(
@@ -98,7 +98,26 @@ async fn do_an_async() {
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
+    use resKern::sprint_ln;
+
+    print_ln_cl!(
+        vga_buffer::Color::Red,
+        "===================================="
+    );
+    print_ln_cl!(
+        vga_buffer::Color::Red,
+        "=    KERNEL PANIC: OUTPUT BELOW    ="
+    );
+    print_ln_cl!(
+        vga_buffer::Color::Red,
+        "===================================="
+    );
     print_ln_cl!(vga_buffer::Color::Red, "{}", _info);
+    sprint_ln!("====================================");
+    sprint_ln!("=    KERNEL PANIC: OUTPUT BELOW    =");
+    sprint_ln!("====================================");
+    sprint_ln!("{}", _info);
+
     resKern::halt_loop();
 }
 
