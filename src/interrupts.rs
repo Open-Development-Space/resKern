@@ -1,6 +1,5 @@
-use crate::key_interpreter::ScanSetOne;
+use crate::gdt;
 use crate::vga_buffer::Color::Red;
-use crate::{gdt, print};
 use crate::{print_cl, print_ln, print_ln_cl, vga_buffer::Color::Yellow};
 use lazy_static::lazy_static;
 use pic8259::ChainedPics;
@@ -63,11 +62,7 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
     use x86_64::instructions::port::Port;
     let mut port = Port::new(0x60);
     let scanned: u8 = unsafe { port.read() };
-    if let Some(scanned_key) = ScanSetOne::map_to_meaning(scanned) {
-        if let Some(scanned_char) = ScanSetOne::meaning_to_char(&scanned_key) {
-            print!("{}", scanned_char);
-        }
-    }
+    crate::task::keyboard::add_scancode(scanned);
 
     unsafe {
         PICS.lock()

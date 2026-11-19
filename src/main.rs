@@ -12,7 +12,6 @@ extern crate spin;
 extern crate uart_16550;
 extern crate volatile;
 extern crate x86_64;
-mod key_interpreter;
 use core::panic::PanicInfo;
 pub mod gdt;
 mod serial;
@@ -22,10 +21,8 @@ use alloc::{boxed::Box, rc::Rc, vec, vec::Vec};
 use bootloader::{BootInfo, entry_point};
 use resKern::{
     allocator,
-    memory::{BootInfoFrameAllocator, translate_addr},
-    task::{Task, simple::SimpleExecutor},
+    task::{Task, keyboard, simple::SimpleExecutor},
 };
-use x86_64::structures::paging::Page;
 
 use crate::vga_buffer::Color::{Cyan, Green};
 
@@ -33,7 +30,7 @@ entry_point!(kern_start);
 
 fn kern_start(boot_info: &'static BootInfo) -> ! {
     use resKern::memory::{self, BootInfoFrameAllocator};
-    use x86_64::{VirtAddr, structures::paging::Translate};
+    use x86_64::VirtAddr;
 
     print_ln!("Beginning kinit\n");
     resKern::init();
@@ -81,6 +78,10 @@ fn kern_start(boot_info: &'static BootInfo) -> ! {
     executor.run();
     print_ln!("End of showcase");
     // End of Test/Showcase code.
+    print_ln!("Enabling Keyboard");
+    executor.spawn(Task::new(keyboard::print_kp()));
+    executor.run();
+
     #[cfg(test)]
     test_main();
 

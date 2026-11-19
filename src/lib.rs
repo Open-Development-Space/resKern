@@ -12,7 +12,6 @@ extern crate alloc;
 pub mod allocator;
 pub mod gdt;
 pub mod interrupts;
-pub mod key_interpreter;
 pub mod memory;
 pub mod serial;
 pub mod task;
