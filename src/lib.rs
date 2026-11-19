@@ -8,11 +8,28 @@
 
 use core::panic::PanicInfo;
 
+extern crate alloc;
+pub mod allocator;
 pub mod gdt;
 pub mod interrupts;
-pub mod key_interpreter;
+pub mod memory;
 pub mod serial;
+pub mod task;
 pub mod vga_buffer;
+
+#[cfg(test)]
+use bootloader::{BootInfo, entry_point};
+
+#[cfg(test)]
+entry_point!(test_start);
+
+/// test entry point
+#[cfg(test)]
+fn test_start(boot_info: &'static BootInfo) -> ! {
+    init();
+    test_main();
+    halt_loop();
+}
 
 pub fn halt_loop() -> ! {
     loop {
@@ -26,16 +43,6 @@ pub fn init() {
     interrupts::init_idt();
     unsafe { interrupts::PICS.lock().initialize() };
     x86_64::instructions::interrupts::enable();
-}
-
-/// Entry point for tests
-#[cfg(test)]
-#[unsafe(no_mangle)]
-pub extern "C" fn _start() -> ! {
-    init();
-    test_main();
-
-    halt_loop();
 }
 
 #[cfg(test)]

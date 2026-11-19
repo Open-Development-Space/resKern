@@ -1,10 +1,10 @@
-use crate::key_interpreter::ScanSetOne;
-use crate::{gdt, print};
+use crate::gdt;
+use crate::vga_buffer::Color::Red;
 use crate::{print_cl, print_ln, print_ln_cl, vga_buffer::Color::Yellow};
 use lazy_static::lazy_static;
 use pic8259::ChainedPics;
 use spin;
-use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame};
+use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame, PageFaultErrorCode};
 
 pub const PIC_1_OFFSET: u8 = 32;
 pub const PIC_2_OFFSET: u8 = PIC_1_OFFSET + 8;
@@ -23,6 +23,7 @@ lazy_static! {
         }
         idt[InterruptIndex::Timer.to_u8()].set_handler_fn(timer_interrupt_handler);
         idt[InterruptIndex::Keyboard.to_u8()].set_handler_fn(keyboard_interrupt_handler);
+        idt.page_fault.set_handler_fn(pf_handler);
         idt
     };
 }
@@ -61,16 +62,26 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
     use x86_64::instructions::port::Port;
     let mut port = Port::new(0x60);
     let scanned: u8 = unsafe { port.read() };
-    if let Some(scanned_key) = ScanSetOne::map_to_meaning(scanned) {
-        if let Some(scanned_char) = ScanSetOne::meaning_to_char(&scanned_key) {
-            print!("{}", scanned_char);
-        }
-    }
+    crate::task::keyboard::add_scancode(scanned);
 
     unsafe {
         PICS.lock()
             .notify_end_of_interrupt(InterruptIndex::Keyboard.to_u8());
     }
+}
+
+/// Handle memory page interrupts
+extern "x86-interrupt" fn pf_handler(
+    stack_frame: InterruptStackFrame,
+    error_code: PageFaultErrorCode,
+) {
+    use x86_64::registers::control::Cr2;
+
+    print_ln_cl!(Yellow, "A PAGE FAULT has occured");
+    print_ln_cl!(Red, "Accessed Address: {:?}", Cr2::read());
+    print_ln_cl!(Red, "Error Code: {:?}", error_code);
+    print_ln_cl!(Red, "{:#?}", stack_frame);
+    crate::halt_loop();
 }
 
 #[derive(Debug, Clone, Copy)]
