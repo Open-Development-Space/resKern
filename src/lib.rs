@@ -6,7 +6,11 @@
 #![reexport_test_harness_main = "test_main"]
 #![feature(abi_x86_interrupt)]
 
+use bootloader::BootInfo;
 use core::panic::PanicInfo;
+use spin::Once;
+
+pub static BOOT_INFO: Once<&'static BootInfo> = Once::new();
 
 extern crate alloc;
 pub mod arch {
@@ -26,7 +30,7 @@ pub mod vga_buffer;
 pub use memory::heap as allocator;
 
 #[cfg(test)]
-use bootloader::{BootInfo, entry_point};
+use bootloader::entry_point;
 
 #[cfg(test)]
 entry_point!(test_start);
@@ -35,6 +39,7 @@ entry_point!(test_start);
 #[cfg(test)]
 fn test_start(boot_info: &'static BootInfo) -> ! {
     init();
+    BOOT_INFO.call_once(|| boot_info);
     test_main();
     halt_loop();
 }
