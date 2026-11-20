@@ -28,6 +28,7 @@ Handle:
 - Memory
 - Dynamic kernel allocations
 - Serial output (VGA is cool but serial is better)
+Comprehensively hit this too!
 
 ## Milestone 2: Run the first user-mode program
 Need a way to enter ring three (like iretq)

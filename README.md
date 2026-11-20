@@ -1,9 +1,6 @@
 # resKern
 Rust based kernel to learn with
 
-## Current Stable
-v0.5.0
-
 ## Info
 Building a kernel in rust where there is no standard library to use so you have to learn a lot from scratch.
 
