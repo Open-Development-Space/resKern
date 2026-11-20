@@ -13,11 +13,7 @@ extern crate uart_16550;
 extern crate volatile;
 extern crate x86_64;
 use core::panic::PanicInfo;
-pub mod gdt;
-mod serial;
 mod vga_buffer;
-
-use alloc::{boxed::Box, rc::Rc, vec, vec::Vec};
 use bootloader::{BootInfo, entry_point};
 use resKern::{
     allocator,
@@ -48,36 +44,6 @@ fn kern_start(boot_info: &'static BootInfo) -> ! {
     print_ln!("finished kinit");
     print_ln!("This program resembles a kernel!");
 
-    // Test/Showcase code. Actual kernel logic and loops to come later.
-    print_ln!("Start of showcase");
-    let hv = Box::new(41);
-    print_ln_cl!(Cyan, "Heap stored value at {:p}", hv);
-
-    let mut vec = Vec::new();
-    for i in 0..500 {
-        vec.push(i);
-    }
-    print_ln_cl!(Cyan, "Vector values at {:p}", vec.as_slice());
-
-    let reference_counted = Rc::new(vec![1, 2, 3]);
-    let cloned_ref = reference_counted.clone();
-    print_ln_cl!(
-        Cyan,
-        "current ref count is {}",
-        Rc::strong_count(&cloned_ref)
-    );
-    core::mem::drop(reference_counted);
-    print_ln_cl!(
-        Cyan,
-        "reference count is now {}",
-        Rc::strong_count(&cloned_ref)
-    );
-
-    print_ln!();
-    executor.spawn(Task::new(do_an_async()));
-    executor.run();
-    print_ln!("End of showcase");
-    // End of Test/Showcase code.
     print_ln!("Enabling Keyboard");
     executor.spawn(Task::new(keyboard::print_kp()));
     executor.run();
@@ -88,19 +54,29 @@ fn kern_start(boot_info: &'static BootInfo) -> ! {
     resKern::halt_loop();
 }
 
-async fn async_thing() -> u16 {
-    4
-}
-
-async fn do_an_async() {
-    let num = async_thing().await;
-    print_ln_cl!(Cyan, "number from async function: {}", num);
-}
-
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
+    use resKern::sprint_ln;
+
+    print_ln_cl!(
+        vga_buffer::Color::Red,
+        "===================================="
+    );
+    print_ln_cl!(
+        vga_buffer::Color::Red,
+        "=    KERNEL PANIC: OUTPUT BELOW    ="
+    );
+    print_ln_cl!(
+        vga_buffer::Color::Red,
+        "===================================="
+    );
     print_ln_cl!(vga_buffer::Color::Red, "{}", _info);
+    sprint_ln!("====================================");
+    sprint_ln!("=    KERNEL PANIC: OUTPUT BELOW    =");
+    sprint_ln!("====================================");
+    sprint_ln!("{}", _info);
+
     resKern::halt_loop();
 }
 
@@ -108,10 +84,4 @@ fn panic(_info: &PanicInfo) -> ! {
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     resKern::test_mode_panic_handling(info)
-}
-
-/// Make a tautological assertion to test tests
-#[test_case]
-fn oneisone() {
-    assert_eq!(1, 1);
 }

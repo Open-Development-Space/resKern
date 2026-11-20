@@ -1,5 +1,3 @@
-use alloc::alloc::{GlobalAlloc, Layout};
-use core::ptr::null_mut;
 use x86_64::{
     VirtAddr,
     structures::paging::{
@@ -12,8 +10,6 @@ pub mod bump_allocator;
 
 pub const HEAP_START: usize = 0xFFFF_C000_0000_0000;
 pub const HEAP_SIZE: usize = 1024 * 1024;
-
-pub struct Dummy;
 
 pub fn heap_init(
     mapper: &mut impl Mapper<Size4KiB>,
@@ -42,16 +38,6 @@ pub fn heap_init(
     Ok(())
 }
 
-unsafe impl GlobalAlloc for Dummy {
-    unsafe fn alloc(&self, _layout: Layout) -> *mut u8 {
-        null_mut()
-    }
-
-    unsafe fn dealloc(&self, _ptr: *mut u8, _layout: Layout) {
-        panic!("dealloc should not be called")
-    }
-}
-
 pub struct Locked<A> {
     inner: spin::Mutex<A>,
 }
@@ -68,12 +54,13 @@ impl<A> Locked<A> {
     }
 }
 
-fn align_up(addr: usize, alignment: usize) -> usize {
-    let gap = addr % alignment;
-    if gap == 0 {
-        return addr;
+fn align_up(addr: usize, alignment: usize) -> Option<usize> {
+    let remainder = addr % alignment;
+    if remainder == 0 {
+        Some(addr)
+    } else {
+        addr.checked_add(alignment - remainder)
     }
-    addr - gap + alignment
 }
 
 use bump_allocator::BumpAllocator;

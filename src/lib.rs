@@ -6,19 +6,32 @@
 #![reexport_test_harness_main = "test_main"]
 #![feature(abi_x86_interrupt)]
 
+use bootloader::BootInfo;
 use core::panic::PanicInfo;
+use spin::Once;
+
+pub static BOOT_INFO: Once<&'static BootInfo> = Once::new();
 
 extern crate alloc;
-pub mod allocator;
-pub mod gdt;
-pub mod interrupts;
+pub mod arch {
+    pub mod x86_64 {
+        pub mod gdt;
+        pub mod interrupts;
+        pub mod pits;
+    }
+}
+pub mod drivers {
+    pub mod keyboard;
+    pub mod serial;
+}
 pub mod memory;
-pub mod serial;
 pub mod task;
 pub mod vga_buffer;
 
+pub use memory::heap as allocator;
+
 #[cfg(test)]
-use bootloader::{BootInfo, entry_point};
+use bootloader::entry_point;
 
 #[cfg(test)]
 entry_point!(test_start);
@@ -27,6 +40,7 @@ entry_point!(test_start);
 #[cfg(test)]
 fn test_start(boot_info: &'static BootInfo) -> ! {
     init();
+    BOOT_INFO.call_once(|| boot_info);
     test_main();
     halt_loop();
 }
@@ -39,9 +53,11 @@ pub fn halt_loop() -> ! {
 
 /// init function
 pub fn init() {
-    gdt::init();
-    interrupts::init_idt();
-    unsafe { interrupts::PICS.lock().initialize() };
+    arch::x86_64::gdt::init();
+    arch::x86_64::interrupts::init_idt();
+    unsafe { arch::x86_64::interrupts::PICS.lock().initialize() };
+    crate::arch::x86_64::pits::init();
+
     x86_64::instructions::interrupts::enable();
 }
 

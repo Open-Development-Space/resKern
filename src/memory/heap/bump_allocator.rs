@@ -30,7 +30,10 @@ impl BumpAllocator {
 unsafe impl GlobalAlloc for Locked<BumpAllocator> {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         let mut locking_bump = self.lock();
-        let alloc_start = align_up(locking_bump.next, layout.align());
+        let alloc_start = match align_up(locking_bump.next, layout.align()) {
+            Some(start) => start,
+            None => return ptr::null_mut(),
+        };
         let alloc_end = match alloc_start.checked_add(layout.size()) {
             Some(end) => end,
             None => return ptr::null_mut(),
