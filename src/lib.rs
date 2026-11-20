@@ -17,6 +17,7 @@ pub mod arch {
     pub mod x86_64 {
         pub mod gdt;
         pub mod interrupts;
+        pub mod pits;
     }
 }
 pub mod drivers {
