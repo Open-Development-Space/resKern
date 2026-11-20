@@ -123,7 +123,8 @@ extern "x86-interrupt" fn df_handler(stack_frame: InterruptStackFrame, error_cod
 
 /// Debug
 extern "x86-interrupt" fn db_handler(stack_frame: InterruptStackFrame) {
-    panic!("EXCEPTION: DEBUG\n{:#?}\n", stack_frame);
+    sprint_ln!("EXCEPTION: DEBUG\n{:#?}\n", stack_frame);
+    print_ln!("EXCEPTION: DEBUG\n{:#?}\n", stack_frame);
 }
 
 /// Overflow
