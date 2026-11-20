@@ -56,6 +56,8 @@ pub fn init() {
     arch::x86_64::gdt::init();
     arch::x86_64::interrupts::init_idt();
     unsafe { arch::x86_64::interrupts::PICS.lock().initialize() };
+    crate::arch::x86_64::pits::init();
+
     x86_64::instructions::interrupts::enable();
 }
 

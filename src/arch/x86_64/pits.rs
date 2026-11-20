@@ -5,7 +5,7 @@ static TICKS: AtomicU64 = AtomicU64::new(0);
 
 /// initialize PITS for timer/clock and uptime
 pub fn init() {
-    let divisor: u16 = 11931;
+    let divisor: u16 = 11931; // 100 Hz
 
     unsafe {
         let mut command = Port::<u8>::new(0x43);
@@ -17,6 +17,10 @@ pub fn init() {
         channel0.write((divisor & 0xFF) as u8);
         channel0.write((divisor >> 8) as u8);
     }
+}
+
+pub fn ticks() -> u64 {
+    TICKS.load(core::sync::atomic::Ordering::Relaxed)
 }
 
 pub fn find_uptime_seconds() -> u64 {

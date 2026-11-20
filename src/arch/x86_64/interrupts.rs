@@ -1,5 +1,7 @@
+use core::panic;
+
 use crate::arch::x86_64::{gdt, pits};
-use crate::vga_buffer::Color::Red;
+use crate::sprint_ln;
 use crate::{print_cl, print_ln, print_ln_cl, vga_buffer::Color::Yellow};
 use lazy_static::lazy_static;
 use pic8259::ChainedPics;
@@ -20,7 +22,15 @@ lazy_static! {
         idt.invalid_opcode.set_handler_fn(ud_handler);
         idt.general_protection_fault.set_handler_fn(gp_handler);
         idt.page_fault.set_handler_fn(pf_handler);
-
+        idt.bound_range_exceeded.set_handler_fn(br_handler);
+        idt.debug.set_handler_fn(db_handler);
+        idt.overflow.set_handler_fn(of_handler);
+        idt.device_not_available.set_handler_fn(nm_handler);
+        idt.x87_floating_point.set_handler_fn(mf_handler);
+        idt.simd_floating_point.set_handler_fn(xm_handler);
+        idt.virtualization.set_handler_fn(ve_handler);
+        idt.machine_check.set_handler_fn(mc_handler);
+        idt.non_maskable_interrupt.set_handler_fn(nmi_handler);
         unsafe {
             idt.double_fault
                 .set_handler_fn(df_handler)
@@ -30,7 +40,6 @@ lazy_static! {
         idt.segment_not_present.set_handler_fn(np_handler);
         idt.stack_segment_fault.set_handler_fn(ss_handler);
         idt.alignment_check.set_handler_fn(ac_handler);
-        pits::init();
         idt[InterruptIndex::Timer.to_u8()].set_handler_fn(timer_interrupt_handler);
         idt[InterruptIndex::Keyboard.to_u8()].set_handler_fn(keyboard_interrupt_handler);
         idt
@@ -92,7 +101,8 @@ extern "x86-interrupt" fn ac_handler(stack_frame: InterruptStackFrame, error_cod
 
 /// Handle breakpoint interrupts
 extern "x86-interrupt" fn bp_handler(stack_frame: InterruptStackFrame) {
-    panic!("EXCEPTION: BREAKPOINT\n{:#?}\n", stack_frame);
+    sprint_ln!("EXCEPTION: BREAKPOINT\n{:#?}\n", stack_frame);
+    print_ln!("EXCEPTION: BREAKPOINT\n{:#?}\n", stack_frame);
 }
 
 /// General Protection Fault
@@ -106,8 +116,51 @@ extern "x86-interrupt" fn gp_handler(stack_frame: InterruptStackFrame, error_cod
 /// Handle double fault interrupts
 extern "x86-interrupt" fn df_handler(stack_frame: InterruptStackFrame, error_code: u64) -> ! {
     panic!(
-        "EXCEPTION: DOUBLE FAULT: {}\n{:#?}",
+        "EXCEPTION: DOUBLE FAULT: {}\n{:#?}\n",
         error_code, stack_frame
+    );
+}
+
+/// Debug
+extern "x86-interrupt" fn db_handler(stack_frame: InterruptStackFrame) {
+    panic!("EXCEPTION: DEBUG\n{:#?}\n", stack_frame);
+}
+
+/// Overflow
+extern "x86-interrupt" fn of_handler(stack_frame: InterruptStackFrame) {
+    panic!("EXCEPTION: OVERFLOW\n{:#?}\n", stack_frame);
+}
+
+/// Device Not Available
+extern "x86-interrupt" fn nm_handler(stack_frame: InterruptStackFrame) {
+    panic!("EXCEPTION: DEVICE NOT AVAILABLE\n{:#?}\n", stack_frame);
+}
+
+/// x87 Floating-Point EXCEPTION
+extern "x86-interrupt" fn mf_handler(stack_frame: InterruptStackFrame) {
+    panic!("EXCEPTION: x87 FP EXCEPTION\n{:#?}\n", stack_frame);
+}
+
+/// SIMD Floating-Point EXCEPTION
+extern "x86-interrupt" fn xm_handler(stack_frame: InterruptStackFrame) {
+    panic!("EXCEPTION: SIMD FP EXCEPTION\n{:#?}\n", stack_frame);
+}
+
+/// Virtualization EXCEPTION
+extern "x86-interrupt" fn ve_handler(stack_frame: InterruptStackFrame) {
+    panic!("EXCEPTION: VIRTUALIZATION EXCEPTION\n{:#?}\n", stack_frame);
+}
+
+/// Non-maskable interrupt (something very bad has happened)
+extern "x86-interrupt" fn nmi_handler(stack_frame: InterruptStackFrame) {
+    panic!("EXCEPTION: NON-MASKABLE INTERRUPT\n{:#?}", stack_frame);
+}
+
+/// machine check (your system is borked)
+extern "x86-interrupt" fn mc_handler(stack_frame: InterruptStackFrame) -> ! {
+    panic!(
+        "HARD STOP TRIGGERED: MACHINE CHECK EXCEPTION\nSomething is likely broken\n{:#?}\n",
+        stack_frame
     );
 }
 
@@ -140,11 +193,12 @@ extern "x86-interrupt" fn pf_handler(
 ) {
     use x86_64::registers::control::Cr2;
 
-    print_ln_cl!(Yellow, "A PAGE FAULT has occured");
-    print_ln_cl!(Red, "Accessed Address: {:?}", Cr2::read());
-    print_ln_cl!(Red, "Error Code: {:?}", error_code);
-    print_ln_cl!(Red, "{:#?}", stack_frame);
-    crate::halt_loop();
+    panic!(
+        "A PAGE FAULT HAS OCCURED:\nAccessed Address: {:?}\nError Code: {:?}\n{:#?}\n",
+        Cr2::read(),
+        error_code,
+        stack_frame
+    );
 }
 
 #[derive(Debug, Clone, Copy)]

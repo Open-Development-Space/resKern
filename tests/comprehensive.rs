@@ -5,12 +5,12 @@
 #![reexport_test_harness_main = "test_main"]
 extern crate alloc;
 
-use alloc::boxed::Box;
 use alloc::alloc::{GlobalAlloc, Layout};
+use alloc::boxed::Box;
 use alloc::vec::Vec;
 use bootloader::{BootInfo, entry_point};
-use core::panic::PanicInfo;
 use core::future::Future;
+use core::panic::PanicInfo;
 use core::pin::Pin;
 use core::sync::atomic::{AtomicU32, Ordering};
 use core::task::{Context, Poll};
@@ -22,8 +22,8 @@ use resKern::task::Task;
 use resKern::task::simple::SimpleExecutor;
 use resKern::vga_buffer::Color;
 use resKern::{print, print_cl, print_ln, print_ln_cl, sprint_ln};
-use x86_64::VirtAddr;
 use spin::Once;
+use x86_64::VirtAddr;
 
 static HEAP_READY: Once<()> = Once::new();
 
@@ -32,8 +32,7 @@ fn ensure_heap_ready() {
         let boot_info = BOOT_INFO.get().expect("BOOT_INFO not initialized");
         let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
         let mut mapper = unsafe { memory::init(phys_mem_offset) };
-        let mut frame_allocator =
-            unsafe { BootInfoFrameAllocator::init(&boot_info.memory_map) };
+        let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_map) };
 
         allocator::heap_init(&mut mapper, &mut frame_allocator)
             .expect("heap initialization failed");
@@ -45,6 +44,8 @@ entry_point!(test_start);
 fn test_start(boot_info: &'static BootInfo) -> ! {
     resKern::init();
     BOOT_INFO.call_once(|| boot_info);
+    ensure_heap_ready();
+
     test_main();
 
     loop {}
@@ -88,8 +89,6 @@ fn test_color_printing() {
 
 #[test_case]
 fn test_memory_heap_allocations() {
-    ensure_heap_ready();
-
     let heap_stored_box = Box::new(41);
 
     sprint_ln!("Box heap memory value at {:p}", heap_stored_box);
@@ -97,7 +96,6 @@ fn test_memory_heap_allocations() {
 
 #[test_case]
 fn test_executor() {
-    ensure_heap_ready();
     let mut executor = SimpleExecutor::new();
     executor.spawn(Task::new(do_a_thing()));
     executor.run();
@@ -105,8 +103,6 @@ fn test_executor() {
 
 #[test_case]
 fn test_heap_vectors_are_distinct_and_accessible() {
-    ensure_heap_ready();
-
     let mut values: Vec<u32> = Vec::new();
     for value in 0..512 {
         values.push(value);
@@ -181,7 +177,6 @@ impl Future for YieldOnce {
 
 #[test_case]
 fn test_executor_wakes_and_completes_tasks() {
-    ensure_heap_ready();
     YIELD_TASK_COUNT.store(0, Ordering::SeqCst);
 
     let mut executor = SimpleExecutor::new();
@@ -200,4 +195,81 @@ async fn testable_value() -> u16 {
 async fn do_a_thing() {
     let value = testable_value().await;
     sprint_ln!("{}", value + value);
+}
+
+#[test_case]
+fn test_breakpoint_exception() {
+    x86_64::instructions::interrupts::int3();
+}
+
+#[test_case]
+fn simple_allocation() {
+    let x = Box::new(41);
+    assert_eq!(*x, 41);
+}
+
+#[test_case]
+fn many_boxes() {
+    for i in 0..10000 {
+        let x = Box::new(i);
+        assert_eq!(*x, i);
+    }
+}
+
+#[test_case]
+fn large_vec() {
+    let mut vec = Vec::new();
+
+    for i in 0..10000 {
+        vec.push(i);
+    }
+
+    for i in 0..10000 {
+        assert_eq!(vec[i], i);
+    }
+}
+
+#[test_case]
+fn huge_vec() {
+    let vec = [0u8; 1024 * 1024];
+    assert_eq!(vec.len(), 1024 * 1024);
+}
+
+#[test_case]
+fn heap_write() {
+    ensure_heap_ready();
+    let mut value = Box::new(10);
+
+    *value = 55;
+
+    assert_eq!(*value, 55);
+}
+
+#[test_case]
+fn stack_write() {
+    let mut _value = 0u64;
+
+    _value = 1234;
+
+    assert_eq!(_value, 1234);
+}
+
+#[test_case]
+fn enable_interrupts() {
+    x86_64::instructions::interrupts::enable();
+
+    assert!(x86_64::instructions::interrupts::are_enabled());
+}
+
+#[test_case]
+fn timer_ticks() {
+    let start = resKern::arch::x86_64::pits::ticks();
+
+    for _ in 0..100000 {
+        core::hint::spin_loop();
+    }
+
+    let end = resKern::arch::x86_64::pits::ticks();
+
+    assert!(end > start);
 }
